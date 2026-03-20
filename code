@@ -1,0 +1,458 @@
+import { useState, useCallback } from "react";
+
+const C = {
+  bg:        '#06060f',
+  bgDeep:    '#040409',
+  card:      '#0c0c1e',
+  cardHov:   '#101028',
+  sidebar:   '#08081a',
+  sideHov:   '#0e0e22',
+  border:    '#14142a',
+  borderHov: '#1e1e3a',
+  accent:    '#e63946',
+  accentDim: 'rgba(230,57,70,0.12)',
+  accentGlow:'0 0 24px rgba(230,57,70,0.25)',
+  text:      '#eeeeff',
+  sec:       '#6a6a9a',
+  muted:     '#2e2e50',
+  green:     '#00c896',
+  blue:      '#4f9cf9',
+  yellow:    '#f59e0b',
+  purple:    '#7c3aed',
+  pink:      '#ec4899',
+  red:       '#ff2222',
+};
+
+const BASE_ANIME = [
+  { id:1, title:"Attack on Titan", titleJP:"Shingeki no Kyojin", cover:"https://cdn.myanimelist.net/images/anime/10/47347l.jpg", genres:["Action","Drama","Fantasy"], themes:["Military","Survival","Politics"], episodes:87, status:"Completed", studio:"MAPPA", year:2013, tone:["Dark","Psychological","War"], rating:9.1, synopsis:"Humanity lives behind enormous walls protecting them from Titans — giant humanoids that devour humans without reason. When a Colossal Titan breaches the outer wall, young Eren Yeager vows revenge.", myStatus:"Watching", myProgress:62, lastWatched:3 },
+  { id:2, title:"Demon Slayer", titleJP:"Kimetsu no Yaiba", cover:"https://cdn.myanimelist.net/images/anime/1286/99889l.jpg", genres:["Action","Fantasy","Adventure"], themes:["Demons","Family","Swordfighting"], episodes:44, status:"Airing", studio:"ufotable", year:2019, tone:["Action","Emotional","Dark"], rating:8.7, synopsis:"After his family is slaughtered by demons, Tanjiro Kamado becomes a Demon Slayer to find a cure for his sister who was turned into one.", myStatus:"Completed", myProgress:44, lastWatched:14 },
+  { id:3, title:"Death Note", titleJP:"Desu Nōto", cover:"https://cdn.myanimelist.net/images/anime/9/9453l.jpg", genres:["Mystery","Psychological","Thriller"], themes:["Supernatural","Morality","Justice"], episodes:37, status:"Completed", studio:"Madhouse", year:2006, tone:["Dark","Psychological","Cerebral"], rating:9.0, synopsis:"A high school student discovers a supernatural notebook that kills anyone whose name is written in it.", myStatus:"Plan to Watch", myProgress:0, lastWatched:null, addedDaysAgo:45 },
+  { id:4, title:"Fullmetal Alchemist: Brotherhood", titleJP:"Hagane no Renkinjutsushi: FMAB", cover:"https://cdn.myanimelist.net/images/anime/1223/96541l.jpg", genres:["Action","Adventure","Fantasy"], themes:["Alchemy","Brotherhood","War"], episodes:64, status:"Completed", studio:"Bones", year:2009, tone:["Epic","Emotional","Dark"], rating:9.1, synopsis:"Two brothers use alchemy to try to bring their dead mother back to life, losing parts of their bodies in the process.", myStatus:"Completed", myProgress:64, lastWatched:60 },
+  { id:5, title:"Hunter x Hunter", titleJP:"Hunter × Hunter", cover:"https://cdn.myanimelist.net/images/anime/11/33657l.jpg", genres:["Action","Adventure","Fantasy"], themes:["Power System","Friendship","Strategy"], episodes:148, status:"Completed", studio:"Madhouse", year:2011, tone:["Dark","Strategic","Psychological"], rating:9.0, synopsis:"Gon Freecss discovers his father is a famous Hunter and sets out to become one himself, meeting allies and facing deadly challenges.", myStatus:"On Hold", myProgress:87, lastWatched:21 },
+  { id:6, title:"Vinland Saga", titleJP:"Vinrando Saga", cover:"https://cdn.myanimelist.net/images/anime/1500/103005l.jpg", genres:["Action","Drama","Historical"], themes:["Vikings","War","Revenge"], episodes:48, status:"Completed", studio:"MAPPA", year:2019, tone:["Dark","Philosophical","War"], rating:8.8, synopsis:"In medieval Europe, young Thorfinn seeks revenge against the mercenary who killed his father, all while serving under that very man.", myStatus:"Watching", myProgress:35, lastWatched:8 },
+  { id:7, title:"Jujutsu Kaisen", titleJP:"Jujutsu Kaisen", cover:"https://cdn.myanimelist.net/images/anime/1171/109222l.jpg", genres:["Action","Fantasy","Horror"], themes:["Curses","Sorcery","Death"], episodes:47, status:"Airing", studio:"MAPPA", year:2020, tone:["Dark","Action","Emotional"], rating:8.7, synopsis:"Yuji Itadori swallows a cursed finger to save his friends, becoming host to a powerful demon.", myStatus:"Watching", myProgress:30, lastWatched:2 },
+  { id:8, title:"Chainsaw Man", titleJP:"Chainsaw Man", cover:"https://cdn.myanimelist.net/images/anime/1806/126216l.jpg", genres:["Action","Horror","Dark Fantasy"], themes:["Devils","Contracts","Violence"], episodes:12, status:"Completed", studio:"MAPPA", year:2022, tone:["Dark","Gritty","Chaotic"], rating:8.6, synopsis:"Denji, a broke young man who can merge with a chainsaw-dog devil, joins a government agency that hunts devils.", myStatus:"Plan to Watch", myProgress:0, lastWatched:null, addedDaysAgo:15 },
+  { id:9, title:"Steins;Gate", titleJP:"Shutainzu Gēto", cover:"https://cdn.myanimelist.net/images/anime/5/73199l.jpg", genres:["Sci-Fi","Thriller","Drama"], themes:["Time Travel","Science","Conspiracy"], episodes:24, status:"Completed", studio:"White Fox", year:2011, tone:["Psychological","Emotional","Cerebral"], rating:9.1, synopsis:"A self-proclaimed mad scientist accidentally invents a way to send messages to the past, triggering dangerous consequences.", myStatus:"Plan to Watch", myProgress:0, lastWatched:null, addedDaysAgo:32 },
+  { id:10, title:"Code Geass", titleJP:"Kōdo Giasu", cover:"https://cdn.myanimelist.net/images/anime/5/50331l.jpg", genres:["Action","Sci-Fi","Mecha"], themes:["Military","Strategy","Politics"], episodes:50, status:"Completed", studio:"Sunrise", year:2006, tone:["Dark","Strategic","Political"], rating:8.8, synopsis:"Exiled prince Lelouch acquires the power of absolute obedience and leads a rebellion against an oppressive empire.", myStatus:"Dropped", myProgress:22, lastWatched:90 },
+  { id:11, title:"Mob Psycho 100", titleJP:"Mobu Saiko Hyaku", cover:"https://cdn.myanimelist.net/images/anime/8/80356l.jpg", genres:["Action","Comedy","Supernatural"], themes:["Psychic Powers","Self-Discovery","Slice of Life"], episodes:37, status:"Completed", studio:"Bones", year:2016, tone:["Wholesome","Action","Philosophical"], rating:8.8, synopsis:"An incredibly powerful psychic boy tries to live a normal life while suppressing his emotions.", myStatus:"Completed", myProgress:37, lastWatched:30 },
+  { id:12, title:"One Punch Man", titleJP:"Wanpanman", cover:"https://cdn.myanimelist.net/images/anime/12/76049l.jpg", genres:["Action","Comedy","Sci-Fi"], themes:["Heroes","Overpowered MC","Society"], episodes:24, status:"Completed", studio:"Madhouse", year:2015, tone:["Comedic","Action","Satirical"], rating:8.7, synopsis:"A hero who can defeat anyone with a single punch struggles with the boredom of being invincible.", myStatus:"Plan to Watch", myProgress:0, lastWatched:null, addedDaysAgo:5 },
+  { id:13, title:"Spy x Family", titleJP:"Supai Famirī", cover:"https://cdn.myanimelist.net/images/anime/1441/122795l.jpg", genres:["Action","Comedy","Slice of Life"], themes:["Family","Espionage","School"], episodes:37, status:"Airing", studio:"Wit Studio", year:2022, tone:["Wholesome","Comedic","Lighthearted"], rating:8.5, synopsis:"A spy assembles a fake family for a mission, unaware that his adopted daughter is a telepath and his wife is an assassin.", myStatus:"Watching", myProgress:18, lastWatched:1 },
+  { id:14, title:"Neon Genesis Evangelion", titleJP:"Shin Seiki Evangerion", cover:"https://cdn.myanimelist.net/images/anime/1314/108941l.jpg", genres:["Action","Sci-Fi","Drama"], themes:["Mecha","Psychological","Religion"], episodes:26, status:"Completed", studio:"Gainax", year:1995, tone:["Dark","Psychological","Existential"], rating:8.6, synopsis:"Teenagers pilot giant mechs to protect humanity from mysterious beings called Angels, while battling their own psychological traumas.", myStatus:"Plan to Watch", myProgress:0, lastWatched:null, addedDaysAgo:7 },
+];
+
+const BLOG_POSTS = [
+  { id:1, title:"Every Attack on Titan Ending Explained: The Full Timeline Breakdown", slug:"attack-on-titan-ending-explained", category:"Ending Explained", excerpt:"The final arc left millions confused. Here's the complete breakdown of the Rumbling, Eren's true plan, and what the post-credits scene really means for the entire franchise.", views:"248K", date:"Mar 15, 2025", readTime:"12 min", youtube:true, featured:true, tags:["Attack on Titan","Ending","Spoilers","Season 4"] },
+  { id:2, title:"10 Anime Like Attack on Titan (Dark, Political, Impossible to Stop Watching)", slug:"anime-like-attack-on-titan", category:"Rankings", excerpt:"If Attack on Titan rewired your brain, these 10 series will do the same. Ranked by similarity to AOT's dark tone, political depth, and shocking plot twists.", views:"189K", date:"Mar 10, 2025", readTime:"8 min", youtube:true, featured:true, tags:["Recommendations","Dark Anime","Attack on Titan","List"] },
+  { id:3, title:"Demon Slayer Power Scaling: Every Hashira Ranked by True Strength (2025)", slug:"demon-slayer-hashira-power-ranking", category:"Power Scaling", excerpt:"We rank every Hashira using manga stats, breathing techniques, and fight outcomes. The final ranking will surprise Infinity fans.", views:"156K", date:"Mar 5, 2025", readTime:"15 min", youtube:true, featured:false, tags:["Demon Slayer","Power Scaling","Hashira","Rankings"] },
+  { id:4, title:"Jujutsu Kaisen Season 3: Every Episode Breakdown & Hidden Details", slug:"jujutsu-kaisen-season-3-breakdown", category:"Episode Breakdown", excerpt:"Season 3 is hitting different. We break down each episode's hidden lore, foreshadowing, and what it means for the final arc.", views:"134K", date:"Feb 28, 2025", readTime:"10 min", youtube:false, featured:false, tags:["Jujutsu Kaisen","Season 3","Breakdown","Hidden Lore"] },
+  { id:5, title:"Chainsaw Man vs Manga: What Season 1 Changed, Cut, and Perfected", slug:"chainsaw-man-manga-vs-anime", category:"Manga vs Anime", excerpt:"MAPPA's adaptation divided the fanbase hard. Here's a chapter-by-chapter comparison of what they changed, what was perfect, and what was completely cut.", views:"98K", date:"Feb 20, 2025", readTime:"18 min", youtube:true, featured:false, tags:["Chainsaw Man","Manga","Adaptation","MAPPA"] },
+  { id:6, title:"Why Vinland Saga Season 2 is the Most Underrated Anime Ever Made", slug:"vinland-saga-season-2-analysis", category:"Character Analysis", excerpt:"Thorfinn's arc in Season 2 is one of the most profound character studies in anime. Here's why pacifism has never hit harder.", views:"87K", date:"Feb 12, 2025", readTime:"14 min", youtube:true, featured:false, tags:["Vinland Saga","Thorfinn","Character Study","Pacifism"] },
+  { id:7, title:"Steins;Gate Explained: The Complete Time Travel Logic (No Plot Holes)", slug:"steins-gate-time-travel-explained", category:"Ending Explained", excerpt:"Every worldline, every divergence number, and the true meaning of the ending — explained with zero plot holes.", views:"211K", date:"Jan 30, 2025", readTime:"20 min", youtube:true, featured:false, tags:["Steins;Gate","Time Travel","Explained","Worldlines"] },
+  { id:8, title:"Top 15 Darkest Anime That Will Destroy You Emotionally", slug:"darkest-anime-emotionally-devastating", category:"Rankings", excerpt:"Not for the faint-hearted. These 15 anime will challenge your sense of morality, grief, and what it means to survive.", views:"167K", date:"Jan 22, 2025", readTime:"7 min", youtube:false, featured:false, tags:["Dark Anime","Emotional","Recommendations","List"] },
+];
+
+function getSimilar(anime, all, limit = 5) {
+  return all.filter(a => a.id !== anime.id).map(a => {
+    let score = 0;
+    const sg = a.genres.filter(g => anime.genres.includes(g)).length;
+    const st = a.themes.filter(t => anime.themes.includes(t)).length;
+    const sn = a.tone.filter(t => anime.tone.includes(t)).length;
+    score += (sg / Math.max(anime.genres.length,1)) * 30;
+    score += (st / Math.max(anime.themes.length,1)) * 25;
+    score += (sn / Math.max(anime.tone.length,1)) * 20;
+    if (a.studio === anime.studio) score += 15;
+    score += Math.max(0, 10 - Math.abs(a.year - anime.year) * 1.5);
+    let reason = "Similar style";
+    if (sn > 0 && a.tone[0] === anime.tone[0]) reason = `Same ${a.tone[0].toLowerCase()} tone`;
+    else if (a.studio === anime.studio) reason = "Same studio style";
+    else if (st > 1) reason = "Psychological themes";
+    else if (sg > 1) reason = "Similar power progression";
+    return { ...a, _score: score, _reason: reason };
+  }).sort((a,b) => b._score - a._score).slice(0, limit);
+}
+
+const STATUS_COLOR = { "Watching":C.blue, "Completed":C.green, "Plan to Watch":C.yellow, "On Hold":C.purple, "Dropped":C.accent };
+const CAT_COLOR = { "Ending Explained":C.accent, "Rankings":C.yellow, "Power Scaling":C.purple, "Episode Breakdown":C.blue, "Manga vs Anime":C.green, "Character Analysis":C.pink, "Anime News":"#ff9c40" };
+const LIST_TABS = ["Watching","Completed","Plan to Watch","On Hold","Dropped"];
+const BLOG_CATS = ["All","Ending Explained","Rankings","Power Scaling","Episode Breakdown","Manga vs Anime","Character Analysis"];
+
+function Chip({ label, color=C.sec }) {
+  return <span style={{ fontSize:10, fontWeight:600, letterSpacing:"0.04em", color, background:`${color}14`, border:`1px solid ${color}35`, borderRadius:4, padding:"2px 7px", whiteSpace:"nowrap" }}>{label}</span>;
+}
+function StatusPill({ s }) { return <Chip label={s} color={STATUS_COLOR[s]||C.sec} />; }
+function Bar({ pct, color=C.accent, h=3 }) {
+  return <div style={{ height:h, background:C.muted, borderRadius:h }}><div style={{ width:`${pct}%`, height:"100%", background:color, borderRadius:h, transition:"width 0.4s ease" }} /></div>;
+}
+function SectionHead({ title, sub, accent=C.accent }) {
+  return (
+    <div style={{ marginBottom:16 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        <div style={{ width:3, height:16, background:accent, borderRadius:2, flexShrink:0 }} />
+        <span style={{ fontSize:15, fontFamily:"'Syne',sans-serif", fontWeight:800, color:C.text }}>{title}</span>
+      </div>
+      {sub && <div style={{ fontSize:11, color:C.sec, marginLeft:12, marginTop:2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function AnimeCard({ anime, onClick }) {
+  const [hov, setHov] = useState(false);
+  const pct = anime.episodes > 0 ? (anime.myProgress / anime.episodes) * 100 : 0;
+  return (
+    <div onClick={() => onClick(anime)} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background:hov?C.cardHov:C.card, border:`1px solid ${hov?C.borderHov:C.border}`, borderRadius:10, overflow:"hidden", cursor:"pointer", transition:"all 0.2s ease", transform:hov?"translateY(-3px)":"none", boxShadow:hov?"0 12px 40px rgba(0,0,0,0.6)":"none" }}>
+      <div style={{ position:"relative", aspectRatio:"2/3", overflow:"hidden" }}>
+        <img src={anime.cover} alt={anime.title} style={{ width:"100%", height:"100%", objectFit:"cover", transform:hov?"scale(1.06)":"scale(1)", transition:"transform 0.45s ease" }} onError={e=>{e.target.style.display="none";}} />
+        <div style={{ position:"absolute", inset:0, background:hov?"rgba(6,6,15,0.4)":"linear-gradient(transparent 55%, rgba(6,6,15,0.9) 100%)" }} />
+        <div style={{ position:"absolute", top:8, left:8 }}><StatusPill s={anime.myStatus} /></div>
+        <div style={{ position:"absolute", top:8, right:8 }}><span style={{ fontSize:9, color:"#ffcc00", background:"rgba(0,0,0,0.6)", borderRadius:3, padding:"2px 5px" }}>★ {anime.rating}</span></div>
+        {hov && (
+          <div style={{ position:"absolute", bottom:0, left:0, right:0, padding:"16px 10px 10px", background:"linear-gradient(transparent, rgba(6,6,15,0.98))" }}>
+            <div style={{ fontSize:10, color:C.sec, marginBottom:4, fontStyle:"italic" }}>{anime.titleJP}</div>
+            <div style={{ display:"flex", gap:4, flexWrap:"wrap" }}>{anime.tone.map(t=><Chip key={t} label={t} color={C.sec}/>)}</div>
+          </div>
+        )}
+      </div>
+      <div style={{ padding:"10px 11px 12px" }}>
+        <div style={{ fontSize:12, fontFamily:"'Syne',sans-serif", fontWeight:700, color:C.text, lineHeight:1.3, marginBottom:6 }}>{anime.title}</div>
+        <div style={{ display:"flex", gap:4, flexWrap:"wrap", marginBottom:anime.myProgress>0?8:0 }}>{anime.genres.slice(0,2).map(g=><Chip key={g} label={g} color={C.sec}/>)}</div>
+        {anime.myProgress > 0 && (<>
+          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+            <span style={{ fontSize:9, color:C.sec }}>Ep {anime.myProgress}/{anime.episodes}</span>
+            <span style={{ fontSize:9, color:C.sec }}>{Math.round(pct)}%</span>
+          </div>
+          <Bar pct={pct} color={pct>=100?C.green:C.accent} />
+        </>)}
+      </div>
+    </div>
+  );
+}
+
+function BlogCard({ post, wide=false }) {
+  const [hov, setHov] = useState(false);
+  const col = CAT_COLOR[post.category]||C.sec;
+  return (
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:hov?C.cardHov:C.card, border:`1px solid ${hov?col+"50":C.border}`, borderRadius:10, padding:wide?"22px 24px":"16px 18px", cursor:"pointer", transition:"all 0.2s ease", transform:hov?"translateY(-2px)":"none", position:"relative", overflow:"hidden" }}>
+      {wide && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,${col},transparent)` }} />}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+        <span style={{ fontSize:9, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", color:col, background:`${col}15`, border:`1px solid ${col}30`, borderRadius:3, padding:"2px 8px" }}>{post.category}</span>
+        {post.youtube && <span style={{ fontSize:10, color:"#ff4444" }}>▶ Video</span>}
+        <span style={{ fontSize:10, color:C.muted, marginLeft:"auto" }}>{post.readTime} read</span>
+      </div>
+      <div style={{ fontSize:wide?16:14, fontFamily:"'Syne',sans-serif", fontWeight:700, color:C.text, lineHeight:1.4, marginBottom:8 }}>{post.title}</div>
+      <div style={{ fontSize:12, color:C.sec, lineHeight:1.65, marginBottom:12, display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" }}>{post.excerpt}</div>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div style={{ display:"flex", gap:5 }}>{post.tags.slice(0,2).map(t=><Chip key={t} label={t} color={C.muted}/>)}</div>
+        <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+          <span style={{ fontSize:10, color:C.muted }}>{post.date}</span>
+          <span style={{ fontSize:10, color:C.sec }}>👁 {post.views}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailPage({ anime, allAnime, onBack, onSelect, onUpdateProgress }) {
+  const similar = getSimilar(anime, allAnime);
+  const [prog, setProg] = useState(anime.myProgress);
+  const pct = anime.episodes > 0 ? (prog / anime.episodes) * 100 : 0;
+  const bump = (n) => { const np = Math.min(anime.episodes, Math.max(0, prog+n)); setProg(np); onUpdateProgress(anime.id, np); };
+  return (
+    <div style={{ padding:"28px 32px 60px", maxWidth:1100 }}>
+      <button onClick={onBack} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:7, color:C.sec, fontSize:12, padding:"7px 14px", cursor:"pointer", fontFamily:"'Outfit',sans-serif", marginBottom:28 }}>← Back</button>
+      <div style={{ display:"grid", gridTemplateColumns:"220px 1fr", gap:30, marginBottom:40 }}>
+        <div>
+          <div style={{ borderRadius:12, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.7)" }}>
+            <img src={anime.cover} alt={anime.title} style={{ width:"100%", display:"block" }} onError={e=>{e.target.style.display="none";}} />
+          </div>
+          <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:6 }}>
+            {[{label:"Studio",val:anime.studio},{label:"Episodes",val:anime.episodes},{label:"Year",val:anime.year},{label:"Status",val:anime.status}].map(r=>(
+              <div key={r.label} style={{ display:"flex", justifyContent:"space-between", fontSize:11, padding:"5px 0", borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ color:C.sec }}>{r.label}</span><span style={{ color:C.text, fontWeight:600 }}>{r.val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize:11, color:C.sec, marginBottom:5, fontStyle:"italic" }}>{anime.titleJP}</div>
+          <h1 style={{ fontSize:30, fontFamily:"'Syne',sans-serif", fontWeight:800, color:C.text, lineHeight:1.1, marginBottom:14 }}>{anime.title}</h1>
+          <div style={{ display:"flex", gap:7, flexWrap:"wrap", marginBottom:14 }}><StatusPill s={anime.myStatus}/><Chip label={`★ ${anime.rating}`} color={C.yellow}/></div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:10 }}>{anime.genres.map(g=><Chip key={g} label={g} color={C.blue}/>)}</div>
+          <div style={{ display:"flex", gap:5, flexWrap:"wrap", marginBottom:16 }}>{anime.themes.map(t=><Chip key={t} label={t} color={C.purple}/>)}</div>
+          <p style={{ fontSize:13, color:C.sec, lineHeight:1.75, marginBottom:24, maxWidth:560 }}>{anime.synopsis}</p>
+          <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"18px 20px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+              <span style={{ fontSize:13, fontFamily:"'Syne',sans-serif", fontWeight:700, color:C.text }}>Episode Tracker</span>
+              <span style={{ fontSize:12, color:C.sec }}>{prog} / {anime.episodes} · {Math.round(pct)}%</span>
+            </div>
+            <Bar pct={pct} color={pct>=100?C.green:C.accent} h={5}/>
+            <div style={{ display:"flex", gap:5, marginTop:14, flexWrap:"wrap" }}>
+              {[...Array(Math.min(anime.episodes,30))].map((_,i)=>{
+                const ep=i+1; const watched=ep<=prog;
+                return <button key={ep} onClick={()=>{setProg(ep);onUpdateProgress(anime.id,ep);}} style={{ width:28,height:28,borderRadius:5,background:watched?(pct>=100?C.green:C.accent):C.muted,border:"none",cursor:"pointer",fontSize:9,fontWeight:700,color:watched?"#fff":C.sec,transition:"all 0.1s" }}>{ep}</button>;
+              })}
+              {anime.episodes>30 && <span style={{ fontSize:11,color:C.sec,alignSelf:"center" }}>+{anime.episodes-30} more</span>}
+            </div>
+            <div style={{ display:"flex", gap:6, marginTop:14 }}>
+              {[-1,1,3].map(n=><button key={n} onClick={()=>bump(n)} style={{ background:C.accentDim,border:`1px solid ${C.accent}40`,borderRadius:6,color:C.accent,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600 }}>{n>0?`+${n} Ep`:`−${Math.abs(n)} Ep`}</button>)}
+              <button onClick={()=>{setProg(anime.episodes);onUpdateProgress(anime.id,anime.episodes);}} style={{ background:`${C.green}15`,border:`1px solid ${C.green}40`,borderRadius:6,color:C.green,padding:"6px 14px",cursor:"pointer",fontSize:11,fontWeight:600,marginLeft:"auto" }}>✓ Mark Complete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <SectionHead title="Similar Anime You'll Love" sub="Scored by genre · theme · tone · studio · era"/>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))", gap:14 }}>
+        {similar.map(a=>(
+          <div key={a.id}>
+            <AnimeCard anime={a} onClick={onSelect}/>
+            <div style={{ marginTop:6,fontSize:10,color:C.purple,textAlign:"center",fontStyle:"italic" }}>"{a._reason}"</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon, msg, sub }) {
+  return (
+    <div style={{ gridColumn:"1/-1",textAlign:"center",padding:"60px 20px",color:C.sec }}>
+      <div style={{ fontSize:36,marginBottom:10,opacity:0.3 }}>{icon}</div>
+      <div style={{ fontFamily:"'Syne',sans-serif",fontSize:15,fontWeight:700,color:C.sec }}>{msg}</div>
+      {sub && <div style={{ fontSize:12,marginTop:4,color:C.muted }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Dashboard({ animeList, onSelect }) {
+  const watching   = animeList.filter(a=>a.myStatus==="Watching");
+  const neverStart = animeList.filter(a=>a.myStatus==="Plan to Watch"&&(a.addedDaysAgo||0)>=14);
+  const completed  = animeList.filter(a=>a.myStatus==="Completed");
+  const suggestions= getSimilar(completed[0]||animeList[0], animeList.filter(a=>a.myStatus!=="Completed"),6);
+  const stats = LIST_TABS.map(t=>({label:t,count:animeList.filter(a=>a.myStatus===t).length,color:STATUS_COLOR[t]}));
+  return (
+    <div style={{ padding:"32px 32px 60px" }}>
+      <div style={{ marginBottom:28 }}>
+        <h1 style={{ fontSize:26,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text,marginBottom:5 }}>Good evening 👋</h1>
+        <p style={{ fontSize:13,color:C.sec }}>{watching.length} in progress · {neverStart.length} abandoned · {completed.length} conquered</p>
+      </div>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:10,marginBottom:36 }}>
+        {stats.map(s=>(
+          <div key={s.label} style={{ background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"14px 16px" }}>
+            <div style={{ fontSize:24,fontFamily:"'Syne',sans-serif",fontWeight:800,color:s.color,lineHeight:1 }}>{s.count}</div>
+            <div style={{ fontSize:10,color:C.sec,marginTop:4,fontWeight:500 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+      <SectionHead title="Pick Up Where You Left Off" sub={`${watching.length} in progress`}/>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:14,marginBottom:38 }}>
+        {watching.slice(0,6).map(a=><AnimeCard key={a.id} anime={a} onClick={onSelect}/>)}
+        {watching.length===0 && <EmptyState icon="◎" msg="Nothing in progress" sub="Go to Discover to start watching"/>}
+      </div>
+      {neverStart.length>0 && (<>
+        <SectionHead title="You Added This But Never Started It" sub="Collecting dust in your queue…" accent={C.yellow}/>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:14,marginBottom:38 }}>
+          {neverStart.slice(0,6).map(a=><AnimeCard key={a.id} anime={a} onClick={onSelect}/>)}
+        </div>
+      </>)}
+      <SectionHead title="Based on Anime You Completed" sub="You'll enjoy these next"/>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(155px,1fr))",gap:14 }}>
+        {suggestions.slice(0,6).map(a=><AnimeCard key={a.id} anime={a} onClick={onSelect}/>)}
+      </div>
+    </div>
+  );
+}
+
+function Discover({ animeList, onSelect }) {
+  const [q, setQ] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const filtered = animeList.filter(a=>{
+    const mq=!q||a.title.toLowerCase().includes(q.toLowerCase())||a.titleJP.toLowerCase().includes(q.toLowerCase())||a.genres.some(g=>g.toLowerCase().includes(q.toLowerCase()))||a.studio.toLowerCase().includes(q.toLowerCase());
+    const ms=filterStatus==="All"||a.myStatus===filterStatus;
+    return mq&&ms;
+  });
+  return (
+    <div style={{ padding:"32px" }}>
+      <h1 style={{ fontSize:26,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text,marginBottom:18 }}>Discover Anime</h1>
+      <div style={{ display:"flex",gap:10,marginBottom:22,flexWrap:"wrap" }}>
+        <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search title, genre, studio…"
+          style={{ flex:"1 1 260px",maxWidth:400,background:C.card,border:`1px solid ${q?C.accent+"60":C.border}`,borderRadius:8,padding:"10px 14px",color:C.text,fontSize:13,fontFamily:"'Outfit',sans-serif",outline:"none" }}/>
+        <div style={{ display:"flex",gap:5,flexWrap:"wrap" }}>
+          {["All",...LIST_TABS].map(s=>(
+            <button key={s} onClick={()=>setFilterStatus(s)} style={{ background:filterStatus===s?(STATUS_COLOR[s]||C.accent)+"20":C.card,border:`1px solid ${filterStatus===s?(STATUS_COLOR[s]||C.accent)+"60":C.border}`,borderRadius:6,padding:"7px 12px",color:filterStatus===s?(STATUS_COLOR[s]||C.accent):C.sec,cursor:"pointer",fontSize:11,fontWeight:filterStatus===s?600:400 }}>{s}</button>
+          ))}
+        </div>
+      </div>
+      {filtered.length>0?(
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(160px,1fr))",gap:16 }}>
+          {filtered.map(a=><AnimeCard key={a.id} anime={a} onClick={onSelect}/>)}
+        </div>
+      ):<EmptyState icon="◎" msg="No results found" sub="Try a different search term"/>}
+    </div>
+  );
+}
+
+function MyLists({ animeList, onSelect, onUpdateProgress }) {
+  const [tab, setTab] = useState("Watching");
+  const items = animeList.filter(a=>a.myStatus===tab);
+  return (
+    <div style={{ padding:"32px" }}>
+      <h1 style={{ fontSize:26,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text,marginBottom:20 }}>My Lists</h1>
+      <div style={{ display:"flex",gap:6,marginBottom:24,flexWrap:"wrap" }}>
+        {LIST_TABS.map(t=>{
+          const n=animeList.filter(a=>a.myStatus===t).length; const col=STATUS_COLOR[t]; const active=tab===t;
+          return <button key={t} onClick={()=>setTab(t)} style={{ background:active?`${col}18`:C.card,border:`1px solid ${active?col+"50":C.border}`,borderRadius:7,padding:"7px 14px",color:active?col:C.sec,cursor:"pointer",fontSize:12,fontWeight:active?600:400,display:"flex",alignItems:"center",gap:6 }}>{t}<span style={{ background:active?col:C.muted,color:active?"#fff":C.sec,borderRadius:10,padding:"1px 6px",fontSize:9,fontWeight:700 }}>{n}</span></button>;
+        })}
+      </div>
+      {items.length>0?(
+        <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+          {items.map(a=>{
+            const pct=a.episodes>0?(a.myProgress/a.episodes)*100:0; const col=STATUS_COLOR[a.myStatus];
+            return (
+              <div key={a.id} onClick={()=>onSelect(a)}
+                style={{ background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"13px 16px",display:"flex",alignItems:"center",gap:14,cursor:"pointer",transition:"all 0.15s" }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=C.borderHov;e.currentTarget.style.background=C.cardHov;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.card;}}>
+                <img src={a.cover} alt={a.title} style={{ width:40,height:56,objectFit:"cover",borderRadius:5,flexShrink:0 }} onError={e=>{e.target.style.display="none";}}/>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ fontSize:14,fontFamily:"'Syne',sans-serif",fontWeight:700,color:C.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis" }}>{a.title}</div>
+                  <div style={{ fontSize:11,color:C.sec,marginTop:2 }}>{a.titleJP} · {a.studio} · {a.year}</div>
+                  <div style={{ marginTop:6,maxWidth:200 }}><Bar pct={pct} color={col} h={3}/></div>
+                </div>
+                <div style={{ textAlign:"right",flexShrink:0 }}>
+                  <div style={{ fontSize:11,color:C.sec,marginBottom:6 }}>Ep {a.myProgress}/{a.episodes}</div>
+                  {a.myProgress<a.episodes&&<button onClick={e=>{e.stopPropagation();onUpdateProgress(a.id,a.myProgress+1);}} style={{ background:C.accentDim,border:`1px solid ${C.accent}40`,borderRadius:5,color:C.accent,padding:"4px 10px",cursor:"pointer",fontSize:10,fontWeight:700 }}>+Ep</button>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ):<EmptyState icon="≡" msg={`Nothing in ${tab}`} sub="Go to Discover to add anime"/>}
+    </div>
+  );
+}
+
+function Blog() {
+  const [cat, setCat] = useState("All");
+  const featured = BLOG_POSTS.filter(p=>p.featured);
+  const all = BLOG_POSTS.filter(p=>cat==="All"?!p.featured:p.category===cat);
+  return (
+    <div>
+      <div style={{ background:`linear-gradient(150deg,#0a0a1e 0%,${C.accent}10 60%,#0a0a1e 100%)`,borderBottom:`1px solid ${C.border}`,padding:"52px 36px 40px",position:"relative",overflow:"hidden" }}>
+        <div style={{ position:"absolute",top:-60,right:-60,width:400,height:400,background:`radial-gradient(circle,${C.accent}12,transparent 65%)`,pointerEvents:"none" }}/>
+        <div style={{ fontSize:10,color:C.accent,letterSpacing:"0.25em",fontWeight:700,textTransform:"uppercase",marginBottom:12 }}>The Anime Socials — Written Hub</div>
+        <h1 style={{ fontSize:42,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text,lineHeight:1.05,marginBottom:10 }}>Anime Explained.<br/><span style={{ color:C.accent }}>Ranked.</span> Decoded.</h1>
+        <p style={{ fontSize:14,color:C.sec,maxWidth:480,lineHeight:1.75,marginBottom:22 }}>News, breakdowns, and deep dives — the written backbone of The Anime Socials YouTube channel.</p>
+        <button style={{ background:"#ff0000",border:"none",borderRadius:8,padding:"10px 22px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8,boxShadow:"0 4px 24px rgba(255,0,0,0.35)" }}>▶ Subscribe on YouTube</button>
+      </div>
+      <div style={{ padding:"28px 32px 60px" }}>
+        <div style={{ display:"flex",gap:6,marginBottom:26,flexWrap:"wrap" }}>
+          {BLOG_CATS.map(c=>{const active=cat===c;const col=CAT_COLOR[c]||C.accent;return <button key={c} onClick={()=>setCat(c)} style={{ background:active?col:C.card,border:`1px solid ${active?col:C.border}`,borderRadius:6,padding:"6px 14px",color:active?"#fff":C.sec,cursor:"pointer",fontSize:12,fontWeight:active?700:400,transition:"all 0.15s" }}>{c}</button>;})}
+        </div>
+        {cat==="All"&&featured.length>0&&(<>
+          <SectionHead title="Featured" sub="Most popular deep dives"/>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:34 }}>
+            {featured.map(p=><BlogCard key={p.id} post={p} wide/>)}
+          </div>
+        </>)}
+        <SectionHead title={cat==="All"?"Latest Articles":cat}/>
+        <div style={{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))",gap:13 }}>
+          {all.map(p=><BlogCard key={p.id} post={p}/>)}
+        </div>
+        <div style={{ marginTop:44,borderRadius:12,overflow:"hidden",background:`linear-gradient(130deg,#120a0a 0%,#0a0a1a 100%)`,border:`1px solid ${C.accent}25`,display:"grid",gridTemplateColumns:"1fr auto",gap:20,alignItems:"center",padding:"28px 32px" }}>
+          <div>
+            <div style={{ fontSize:19,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text,marginBottom:7 }}>Every Article Has a YouTube Video</div>
+            <div style={{ fontSize:13,color:C.sec,maxWidth:420,lineHeight:1.7 }}>Subscribe to The Anime Socials for weekly anime analysis, power scaling, and episode breakdowns.</div>
+          </div>
+          <button style={{ background:"#ff0000",border:"none",borderRadius:9,padding:"13px 26px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap",boxShadow:"0 6px 28px rgba(255,0,0,0.35)" }}>▶ Subscribe Now</button>
+        </div>
+        <div style={{ marginTop:20,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+          {[{name:"Crunchyroll",desc:"Watch every anime we cover — ad-free",color:"#f47521",icon:"🍥"},{name:"Amazon Manga",desc:"Read the source — official manga volumes",color:"#ff9900",icon:"📖"}].map(p=>(
+            <div key={p.name} style={{ background:C.card,border:`1px solid ${C.border}`,borderRadius:9,padding:"14px 18px",display:"flex",alignItems:"center",gap:14,cursor:"pointer" }}>
+              <span style={{ fontSize:24 }}>{p.icon}</span>
+              <div><div style={{ fontSize:12,fontFamily:"'Syne',sans-serif",fontWeight:700,color:p.color }}>{p.name}</div><div style={{ fontSize:11,color:C.sec,marginTop:2 }}>{p.desc}</div></div>
+              <span style={{ marginLeft:"auto",fontSize:11,color:C.sec }}>→</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar({ page, setPage, open, setOpen }) {
+  const nav=[{id:"dashboard",icon:"⬡",label:"Dashboard"},{id:"discover",icon:"◎",label:"Discover"},{id:"mylists",icon:"≡",label:"My Lists"},{id:"blog",icon:"⊡",label:"The Anime Socials"}];
+  return (
+    <div style={{ width:open?220:60,minHeight:"100vh",height:"100%",background:C.sidebar,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",transition:"width 0.22s ease",flexShrink:0,position:"sticky",top:0,zIndex:10,overflowX:"hidden" }}>
+      <div style={{ padding:"18px 14px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:10,whiteSpace:"nowrap" }}>
+        <div style={{ width:30,height:30,borderRadius:7,background:C.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0,boxShadow:C.accentGlow }}>⟡</div>
+        {open&&<div style={{ minWidth:0 }}><div style={{ fontSize:13,fontFamily:"'Syne',sans-serif",fontWeight:800,color:C.text }}>ANITRACK</div><div style={{ fontSize:9,color:C.sec,letterSpacing:"0.12em" }}>ANIME OS</div></div>}
+        <button onClick={()=>setOpen(!open)} style={{ marginLeft:"auto",background:"none",border:"none",color:C.sec,cursor:"pointer",fontSize:13,padding:4,flexShrink:0 }}>{open?"‹":"›"}</button>
+      </div>
+      <nav style={{ padding:"10px 8px",flex:1 }}>
+        {nav.map(item=>{const active=page===item.id;return(
+          <button key={item.id} onClick={()=>setPage(item.id)}
+            style={{ width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 10px",borderRadius:7,marginBottom:2,background:active?C.accentDim:"none",border:`1px solid ${active?C.accent+"35":"transparent"}`,color:active?C.accent:C.sec,cursor:"pointer",transition:"all 0.15s",textAlign:"left",whiteSpace:"nowrap",overflow:"hidden" }}
+            onMouseEnter={e=>{if(!active)e.currentTarget.style.background=C.sideHov;}}
+            onMouseLeave={e=>{if(!active)e.currentTarget.style.background="none";}}>
+            <span style={{ fontSize:15,flexShrink:0 }}>{item.icon}</span>
+            {open&&<span style={{ fontSize:12,fontFamily:"'Outfit',sans-serif",fontWeight:500 }}>{item.label}</span>}
+          </button>
+        );})}
+      </nav>
+      {open&&(
+        <div style={{ padding:"12px 14px",borderTop:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:10,whiteSpace:"nowrap" }}>
+          <div style={{ width:30,height:30,borderRadius:"50%",flexShrink:0,background:`linear-gradient(135deg,${C.accent},${C.purple})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,color:"#fff" }}>A</div>
+          <div style={{ minWidth:0 }}><div style={{ fontSize:12,fontWeight:600,color:C.text,overflow:"hidden",textOverflow:"ellipsis" }}>Anime Fan</div><div style={{ fontSize:9,color:C.sec }}>Free Plan · Sign In</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function App() {
+  const [page, setPage] = useState("dashboard");
+  const [detail, setDetail] = useState(null);
+  const [sideOpen, setSideOpen] = useState(true);
+  const [animeList, setAnimeList] = useState(BASE_ANIME);
+
+  const updateProgress = useCallback((id, np) => {
+    setAnimeList(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      const finished = np >= a.episodes;
+      return { ...a, myProgress:np, myStatus:finished?"Completed":a.myStatus==="Plan to Watch"?"Watching":a.myStatus, lastWatched:0 };
+    }));
+    setDetail(prev => {
+      if (!prev||prev.id!==id) return prev;
+      return { ...prev, myProgress:np, myStatus:np>=prev.episodes?"Completed":prev.myStatus };
+    });
+  }, []);
+
+  const goTo = (pg) => { setPage(pg); setDetail(null); };
+
+  return (
+    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:"'Outfit',sans-serif", color:C.text }}>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0;}::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:${C.border};border-radius:2px;}::-webkit-scrollbar-thumb:hover{background:${C.accent};}input::placeholder{color:${C.muted};}button{font-family:'Outfit',sans-serif;}`}</style>
+      <Sidebar page={page} setPage={goTo} open={sideOpen} setOpen={setSideOpen}/>
+      <main style={{ flex:1, overflowY:"auto", minWidth:0, maxHeight:"100vh" }}>
+        {detail?(
+          <DetailPage anime={detail} allAnime={animeList} onBack={()=>setDetail(null)} onSelect={a=>setDetail(a)} onUpdateProgress={updateProgress}/>
+        ):page==="dashboard"?(
+          <Dashboard animeList={animeList} onSelect={setDetail}/>
+        ):page==="discover"?(
+          <Discover animeList={animeList} onSelect={setDetail}/>
+        ):page==="mylists"?(
+          <MyLists animeList={animeList} onSelect={setDetail} onUpdateProgress={updateProgress}/>
+        ):page==="blog"?(
+          <Blog/>
+        ):null}
+      </main>
+    </div>
+  );
+}
+AniTrack OS is live. Here's what you can do right now:
+⬡ Dashboard — See your stats, continue watching, neglected queue, and smart recommendations
+◎ Discover — Search any title, genre, or studio — filter by status
+≡ My Lists — Click any row to open detail, tap +Ep to log progress inline
+⊡ The Anime Socials — Full blog hub with category filtering, featured posts, and YouTube CTAs
+Click any card → opens the detail page with the episode tracker grid, +/− controls, Mark Complete, and the live similarity engine with reason labels
